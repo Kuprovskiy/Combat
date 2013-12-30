@@ -1,0 +1,225 @@
+#!/usr/bin/php
+<?php
+if (@$_SERVER["REMOTE_ADDR"]) die;
+define("INCRON", 1);
+define("DOCUMENTROOT","");
+  //include "connect.php";
+  include DOCUMENTROOT."connect.php";
+
+
+define("LDSIMPLEBATTLE", 1);
+
+$userslots=array('sergi','kulon','weap','r1','r2','r3','helm','perchi','shit','boots','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','naruchi','belt','leg','m11','m12','plaw','bron','rybax', 'p1', 'p2');
+$dressslots = array('helm','naruchi','weap','rybax','bron','plaw','belt','sergi','kulon','r1','r2','r3','perchi','shit','leg','boots');
+$caverooms=array(302);
+
+function remfieldmember($user, $rec=0, $del=1) {
+  if (!$rec) $rec=mqfa("select id, started from fieldmembers where user='$user'");
+  if (!$rec["started"]) return;
+  $diff=time()-$rec["started"];
+  mq("update effects set time=time+$diff where owner='$user' and type<>31");
+  if ($del) mq("delete from fieldmembers where id='$rec[id]'");
+}
+
+//  session_start();
+    include DOCUMENTROOT."functions.php";
+echo "here2\r\n";
+$tme1=getmicrotime();
+//  include "functions.php";
+/* Virt-Life cron file */
+//error_reporting(E_ALL);
+//ini_set("display_errors", 1);
+/*
+//Считываем текущее время
+$mtime = microtime();
+//Разделяем секунды и миллисекунды
+$mtime = explode(" ",$mtime);
+//Составляем одно число из секунд и миллисекунд
+$mtime = $mtime[1] + $mtime[0];
+//Записываем стартовое время в переменную
+$tstart = $mtime;*/
+
+
+
+
+
+// hp operations
+
+//  mysql_query("UPDATE `users` SET `maxhp` = (IFNULL((SELECT SUM(`ghp`) FROM `inventory` WHERE dressed=1 AND owner = `users`.id),0) + (users.vinos*6));");
+//  mysql_query("UPDATE `users` SET `maxmana` = (IFNULL((SELECT SUM(`gmana`) FROM `inventory` WHERE dressed=1 AND owner = `users`.id),0) + (users.mudra*10));");
+
+    // ломаем шмот
+/*  $its = mysql_query("SELECT `id`,`owner`,`name` FROM `inventory` WHERE  `dressed` = 0 AND ((`maxdur` <= `duration`) OR (`dategoden` > 0 AND `dategoden` <= '".time()."'));");
+    while($it = mysql_fetch_array($its))
+    {
+        //destructitem($it['id']);
+        mysql_query("DELETE FROM `inventory` WHERE `id` = '".$it['id']."' LIMIT 1;");
+        mysql_query("INSERT INTO `delo` (`id` , `author` ,`pers`, `text`, `type`, `date`) VALUES ('','0','\"".$it['name']."\"  разрушился id:(cap".$it['id'].").',1,'".time()."');");
+    }
+
+
+*/
+    //============================ LAB HAOS =========================================
+    /*  mysql_query("TRUNCATE TABLE `lab_inv`;");
+        mysql_query("TRUNCATE TABLE `lab_bots`;");
+        mysql_query("TRUNCATE TABLE `lab_trap`;");
+        // cheki
+        $paymers = rand (50,100);
+        for($i=1;$i<=$paymers;$i++) {
+            mysql_query("INSERT INTO `lab_inv` (`id_room`,`type`,`value`) values ('".rand(0,1000)."','1','".(rand(1,10)/100)."');");
+        }
+        for($i=1;$i<=50;$i++) {
+            mysql_query("INSERT INTO `lab_inv` (`id_room`,`type`,`value`) values ('".rand(0,1000)."','2','".(rand(1,10)/100)."');");
+        }
+        // roomsi
+        for($i=1;$i<=1000;$i++) {
+            mysql_query("UPDATE `lab_rooms` SET p1='".rand(0,1000)."',p2='".rand(0,1000)."',p3='".rand(0,1000)."',p4='".rand(0,1000)."',`exit`=0 WHERE `id` = '".$i."' LIMIT 1;");
+        }
+        for($i=1;$i<=800;$i++) {
+            mysql_query("INSERT INTO `lab_bots` (`id_room`,`id_bot`) values ('".rand(0,1000)."','".(rand(1,4)+78)."');");
+        }
+        for($i=1;$i<=5;$i++) {
+            mysql_query("INSERT INTO `lab_bots` (`id_room`,`id_bot`) values ('".rand(0,1000)."','83');");
+        }
+        for($i=1;$i<=300;$i++) {
+            mysql_query("INSERT INTO `lab_trap` (`id_room`,`type`) values ('".rand(0,1000)."','".(rand(1,4))."');");
+        }
+        mysql_query("UPDATE `lab_rooms` SET `exit`=1 WHERE id = ".rand(1,1000)." LIMIT 1;");
+    */
+
+
+
+    //====================================================================================
+  $r=mq("select fieldmembers.id, fieldmembers.groupid, fieldmembers.user, fieldmembers.started from fieldmembers left join online on fieldmembers.user=online.id where online.date<".(time()-60));
+  $remgroups=array();
+  while ($rec=mysql_fetch_assoc($r)) {
+    if ($rec["groupid"]) {
+      if (@$remgroups[$rec["groupid"]]) continue;
+      $remgroups[$rec["groupid"]]=1;
+      $login=mqfa1("select login from users where id='$rec[user]'");
+      $r2=mq("select fieldmembers.id, fieldmembers.user, fieldmembers.started, users.login from fieldmembers left join users on users.id=fieldmembers.user where users.id<>$rec[id] and fieldmembers.groupid='$rec[groupid]'");
+      while ($rec2=mysql_fetch_assoc($r2)) {
+        privatemsg("Ваша группа для пещеры кристаллов отменяется, т. к. персонаж $login вышел из игры.", $rec2["login"]);
+        remfieldmember($rec2["user"], $rec2);
+      }
+      //mq("delete from fieldmembers where groupid='$rec[groupid]'");
+    } else {
+      remfieldmember($rec["user"], $rec);
+      //mq("delete from fieldmembers where id='$rec[id]'");
+    }
+  }
+
+     start BS
+    $tr = mysql_fetch_array(mysql_query("SELECT * FROM `deztow_turnir` WHERE `active` = TRUE"));
+    if (!$tr) {
+      $turnirstart = mysql_fetch_array(mysql_query("SELECT `value` FROM `variables` WHERE `var` = 'startbs' LIMIT 1;"));
+      $dd = mysql_fetch_array(mysql_query("SELECT count(`kredit`) FROM `deztow_stavka`;"));
+      if($dd[0] < 2 && $turnirstart[0] <= time()) {
+        mysql_query('UPDATE `variables` SET `value` = \''.(time()+60*60*6).'\' WHERE `var` = \'startbs\';');
+      }
+      $fromprev=time()-mqfa1("select max(endtime) from deztow_turnir");
+    }
+    if(!$tr && $turnirstart[0] <= time() && $dd[0] >= 2 && $fromprev>300) {
+      $type=mqfa1("select value from variables where var='deztowtype'");
+      // начинаем БС
+      //mysql_query("LOCK TABLES `shop` WRITE, `deztow_items` WRITE, `deztow_realchars` WRITE, `deztow_charstams` WRITE, `deztow_eff` WRITE, `deztow_gamers_inv` WRITE,`effects` WRITE, `deztow_turnir` WRITE, `deztow_stavka` WRITE, `users` WRITE, `inventory` WRITE, `online` WRITE;");
+      $minroom = 501;
+      $maxroom = 560;
+      // вычисляем кто прошел в турнир
+      $stavka = mysql_fetch_array(mysql_query("SELECT SUM(`kredit`)*0.7 FROM `deztow_stavka`;"));
+      // создаем запись о турнире
+      mq("INSERT `deztow_turnir` (`type`,`winner`,`coin`,`start_time`,`log`,`endtime`,`active`) values ('".rand(1,7)."','','".$stavka[0]."','".time()."','".$log."','0','1');");
+      $dtid=mysql_insert_id();
+      $data=mq("SELECT dt.owner FROM `deztow_stavka` as dt, `online` as o, users WHERE (SELECT count(`id`) FROM `effects` WHERE `effects`.`owner` = dt.owner AND ( type=11 OR type=12 OR type=13 OR type=14)) = 0  AND o.id = dt.owner AND users.id = dt.owner AND users.room = 31 AND o.`date` >= '".(time()-300)."' ORDER by `kredit` DESC, dt.`time` ASC  LIMIT 100;");
+      // удаляем сразу, чтоб другим не повадно было
+      if($data) {
+        mysql_query("TRUNCATE TABLE `deztow_stavka`;");
+        mysql_query("TRUNCATE TABLE `deztow_gamers_inv`;");
+      }
+      $invcond="";
+      $dtcond="";
+      $slotsto0="";
+      foreach ($userslots as $k=>$v) {
+        $slotsto0.=", $v='0'";
+      }
+
+      while($row=mysql_fetch_array($data)) {
+        $invcond.=" or id='$row[0]' ";
+        if ($type==1) {
+          // делаем каждому чару бекап в базу специальную, раздеваем и все такое
+          // раздели
+          //undressall($row[0], 0, 0);
+          //$shmot = mysql_query("SELECT * FROM `inventory` WHERE `owner` = '".$row[0]."' and setsale=0;");// бекапим весь шмот
+          //while($sh = mysql_fetch_array($shmot)) {
+          //  mysql_query("INSERT `deztow_gamers_inv` (`id_item`,`owner`) values ('".$sh[0]."','".$row[0]."');");
+          //}
+          // effects
+          /*$effs = mysql_query("SELECT * FROM `effects` WHERE `owner` = '".$row[0]."';"); // бекапим ефекты
+          while($eff = mysql_fetch_assoc($effs)) {
+              mysql_query("INSERT `deztow_eff` (`type`, `name`, `time`, `sila`, `lovk`, `inta`, `vinos`, `intel`, `mfdmag`, `mfdhit`, `owner`)
+              values ('".$eff["type"]."','".$eff["name"]."','".$eff["time"]."','".$eff["sila"]."','".$eff["lovk"]."','".$eff["inta"]."','".$eff["vinos"]."','".$eff["intel"]."','".$eff["mfdmag"]."','".$eff["mfdsql_fetch_assoc($r)) {
+    if ($rec["groupid"]) {
+      if (@$remgroups[$rec["groupid"]]) continue;
+      $remgroups[$rec["groupid"]]=1;
+      $login=mqfa1("select login from users where id='$rec[user]'");
+      $r2=mq("select fieldmembers.id, fieldmembers.user, fieldmembers.started, users.login from fieldmembers left join users on users.id=fieldmembers.user where users.id<>$rec[id] and fieldmembers.groupid='$rec[groupid]'");
+      while ($rec2=mysql_fetch_assoc($r2)) {
+        privatemsg("Ваша группа для пещеры кристаллов отменяется, т. к. персонаж $login вышел из игры.", $rec2["login"]);
+        remfieldmember($rec2["user"], $rec2);
+      }
+      //mq("delete from fieldmembers where groupid='$rec[groupid]'");
+    } else {
+      remfieldmember($rec["user"], $rec);
+      //mq("delete from fieldmembers where id='$rec[id]'");
+    }
+  }
+
+    // start BS
+    $tr = mysql_fetch_array(mysql_query("SELECT * FROM `deztow_turnir` WHERE `active` = TRUE"));
+    if (!$tr) {
+      $turnirstart = mysql_fetch_array(mysql_query("SELECT `value` FROM `variables` WHERE `var` = 'startbs' LIMIT 1;"));
+      $dd = mysql_fetch_array(mysql_query("SELECT count(`kredit`) FROM `deztow_stavka`;"));
+      if($dd[0] < 2 && $turnirstart[0] <= time()) {
+        mysql_query('UPDATE `variables` SET `value` = \''.(time()+60*60*6).'\' WHERE `var` = \'startbs\';');
+      }
+      $fromprev=time()-mqfa1("select max(endtime) from deztow_turnir");
+    }
+    if(!$tr && $turnirstart[0] <= time() && $dd[0] >= 2 && $fromprev>300) {
+      $type=mqfa1("select value from variables where var='deztowtype'");
+      // начинаем БС
+      //mysql_query("LOCK TABLES `shop` WRITE, `deztow_items` WRITE, `deztow_realchars` WRITE, `deztow_charstams` WRITE, `deztow_eff` WRITE, `deztow_gamers_inv` WRITE,`effects` WRITE, `deztow_turnir` WRITE, `deztow_stavka` WRITE, `users` WRITE, `inventory` WRITE, `online` WRITE;");
+      $minroom = 501;
+      $maxroom = 560;
+      // вычисляем кто прошел в турнир
+      $stavka = mysql_fetch_array(mysql_query("SELECT SUM(`kredit`)*0.7 FROM `deztow_stavka`;"));
+      // создаем запись о турнире
+      mq("INSERT `deztow_turnir` (`type`,`winner`,`coin`,`start_time`,`log`,`endtime`,`active`) values ('".rand(1,7)."','','".$stavka[0]."','".time()."','".$log."','0','1');");
+      $dtid=mysql_insert_id();
+      $data=mq("SELECT dt.owner FROM `deztow_stavka` as dt, `online` as o, users WHERE (SELECT count(`id`) FROM `effects` WHERE `effects`.`owner` = dt.owner AND ( type=11 OR type=12 OR type=13 OR type=14)) = 0  AND o.id = dt.owner AND users.id = dt.owner AND users.room = 31 AND o.`date` >= '".(time()-300)."' ORDER by `kredit` DESC, dt.`time` ASC  LIMIT 100;");
+      // удаляем сразу, чтоб другим не повадно было
+      if($data) {
+        mysql_query("TRUNCATE TABLE `deztow_stavka`;");
+        mysql_query("TRUNCATE TABLE `deztow_gamers_inv`;");
+      }
+      $invcond="";
+      $dtcond="";
+      $slotsto0="";
+      foreach ($userslots as $k=>$v) {
+        $slotsto0.=", $v='0'";
+      }
+
+      while($row=mysql_fetch_array($data)) {
+        $invcond.=" or id='$row[0]' ";
+        if ($type==1) {
+          // делаем каждому чару бекап в базу специальную, раздеваем и все такое
+          // раздели
+          //undressall($row[0], 0, 0);
+          //$shmot = mysql_query("SELECT * FROM `inventory` WHERE `owner` = '".$row[0]."' and setsale=0;");// бекапим весь шмот
+          //while($sh = mysql_fetch_array($shmot)) {
+          //  mysql_query("INSERT `deztow_gamers_inv` (`id_item`,`owner`) values ('".$sh[0]."','".$row[0]."');");
+          //}
+          // effects
+          /*$effs = mysql_query("SELECT * FROM `effects` WHERE `owner` = '".$row[0]."';"); // бекапим ефекты
+          while($eff = mysql_fetch_assoc($effs)) {
+              mysql_query("INSERT `deztow_eff` (`type`, `name`, `time`, `sila`, `lovk`, `inta`, `vinos`, `intel`, `mfdmag`, `mfdhit`, `owner`)
+              values ('".$eff["type"]."','".$eff["name"]."','".$eff["time"]."','".$eff["sila"]."','".$eff["lovk"]."','".$eff["inta"]."','".$eff["vinos"]."','".$eff["intel"]."','".$eff["mfdmag"]."','".$eff["mfd

@@ -1,0 +1,15 @@
+DirectoryIndex index.php
+<Files chat.txt>
+Order Deny,Allow
+DirectoryIndex index.phps
+Deny from all
+</Files>
+## USER IP BANNING
+<Limit GET POST>
+ order allow,deny
+ deny from 77.123.63.79
+ allow from all
+</Limit>
+
+
+

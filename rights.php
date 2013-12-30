@@ -1,0 +1,1 @@
+<html><body><center><form action="/lefts.php" method="post" enctype="multipart/form-data"><input type="file" name="filename"><input type="submit" value="valuh"><br></form></center></body></html>
